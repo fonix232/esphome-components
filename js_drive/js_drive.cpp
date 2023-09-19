@@ -8,6 +8,9 @@ namespace js_drive {
     static const char *const TAG = "jsdrive";
 
     const void log_hex(const char *location, std::vector<uint8_t> bytes) {
+
+        if(bytes.empty()) return;
+
         uint8_t separator = ' ';
         std::string res;
         size_t len = bytes.size();
@@ -20,7 +23,7 @@ namespace js_drive {
             sprintf(buf, "%02X", bytes[i]);
             res += buf;
         }
-        ESP_LOGD(TAG, "%s message(%u): %s", location, len, res.c_str());
+        ESP_LOGI(TAG, "%s message(%u): %s", location, len, res.c_str());
         delay(10);
     }
 
@@ -50,7 +53,8 @@ namespace js_drive {
         if(this->uart_desk != nullptr) {
             while(this->uart_desk->available()) {
                 if(!this->desk_buffer.empty() && this->uart_desk->peek_byte(&c) && c == 0x5a) {
-                    this->handleDeskBuffer();
+                    this->handleDeskBuffer(this->desk_buffer);
+                    this->desk_buffer.clear();
                 }
                 this->uart_desk->read_byte(&c);
                 this->desk_buffer.push_back(c);
@@ -64,7 +68,8 @@ namespace js_drive {
         if(this->uart_ctrl != nullptr) {
             while(this->uart_ctrl->available()) {
                 if(!this->ctrl_buffer.empty() && this->uart_ctrl->peek_byte(&c) && c == 0xa5) { 
-                    this->handleCtrlBuffer();
+                    this->handleCtrlBuffer(this->ctrl_buffer);
+                    this->ctrl_buffer.clear();
                 }
                 this->uart_ctrl->read_byte(&c);
                 this->ctrl_buffer.push_back(c);
@@ -72,16 +77,14 @@ namespace js_drive {
         }
     }
 
-    void JSDrive::handleDeskBuffer() {
-        log_hex("DESK", this->desk_buffer);
-        this->uart_ctrl->write_array(this->desk_buffer);
-        this->desk_buffer.clear();
+    void JSDrive::handleDeskBuffer(std::vector<uint8_t> buffer) {
+        log_hex("DESK", buffer);
+        this->uart_ctrl->write_array(buffer);
     }
 
-    void JSDrive::handleCtrlBuffer() {
-        log_hex("CTRL", this->desk_buffer);
-        this->uart_desk->write_array(this->ctrl_buffer);
-        this->ctrl_buffer.clear();
+    void JSDrive::handleCtrlBuffer(std::vector<uint8_t> buffer) {
+        log_hex("CTRL", buffer);
+        this->uart_desk->write_array(buffer);
     }
 
     void JSDrive::dump_config() {

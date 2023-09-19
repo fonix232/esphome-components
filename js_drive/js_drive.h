@@ -29,8 +29,8 @@ class JSDrive : public Component {
         void readDeskBus();
         void readCtrlBus();
 
-        void handleDeskBuffer();
-        void handleCtrlBuffer();
+        void handleDeskBuffer(std::vector<uint8_t> buffer);
+        void handleCtrlBuffer(std::vector<uint8_t> buffer);
 };
 
 }
